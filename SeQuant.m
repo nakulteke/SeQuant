@@ -246,7 +246,7 @@ noorder = normalOrder[False];
 createSQS[creInds_List,annInds_List,norm_normalOrder:inorder] :=
     Module[ {},
     	If[ SeQuantVacuum === SeQuantVacuumChoices["MultiConfiguration"],
-			Return[mSQS[norm, flattenSQS[SQS[creInds,annInds,norm]]]]
+			  Return[mSQS[norm, flattenSQS[SQS[creInds,annInds,norm]]]]
     	];
         Return[flattenSQS[SQS[creInds,annInds,norm]]]
     ];
@@ -261,10 +261,6 @@ flattenSQS[a_SQS] :=
         If[ Depth[a]<5,
             Return[a]
         ];
-        Clear[result];
-        Clear[creInds];
-        Clear[annInds];
-        Clear[x];
         na = Length[a[[2]]];
         nc = Length[a[[1]]];
         creInds = Cases[a[[1]],x_particleIndex->Append[x,indexType[cre]]];
@@ -273,14 +269,6 @@ flattenSQS[a_SQS] :=
         Return[result];
     ];
 
-
-(* SQS in MultiConfiguration case has non normal ordered form *)    
-(*
-createmultiSQS[creInds_List,annInds_List,norm_normalOrder:inorder] :=
-    Module[ {},
-        Return[multiSQS[norm, createSQS[creInds,annInds,norm]]]
-    ];
-*)
 
 (* find all index types in a *)
 indexTypesSQS[a_SQS] :=
@@ -358,10 +346,6 @@ flattenSQM[a_SQM] :=
         If[ Depth[a]<5,
             Return[a]
         ];
-        Clear[result];
-        Clear[braInds];
-        Clear[ketInds];
-        Clear[x];
         nb = Length[a[[2]]];
         nk = Length[a[[3]]];
         braInds = Cases[a[[2]],x_particleIndex->Append[x,indexType[bra] ] ];
@@ -817,7 +801,7 @@ contractSQS[str:NCM[__SQS],ptype_particleType,contractOptions_List] :=
     				newcontractOptions = Cases[contractOptions, a_ /; FreeQ[a, fullContract]];
     				newcontractOptions = Append[ newcontractOptions, fullContract->False ],
     				newcontractOptions = contractOptions
-				];    
+          ];
     			result = contractSQS[str[[1]],str[[2]], newcontractOptions];
     			newstr = Take[ str, {3,nstr}];
     			f[a_CR] := (
@@ -826,11 +810,11 @@ contractSQS[str:NCM[__SQS],ptype_particleType,contractOptions_List] :=
     					CR[ a[[1]], a[[2]]**newstr ]	
     				]
     				);
-    			(* when there is only one CR[] result, map function no longer works *)
-				If [ numberCR[result] === 1,
-					result = f[result],
+          (* when there is only one CR[] result, map function no longer works *)
+          If [ numberCR[result] === 1,
+					  result = f[result],
     				result = Map[f, result]
-				];
+          ];
 
     			If[ SeQuantDebugLevel>=5,
     				Print["new contraction    ", result//TraditionalForm];
@@ -1576,7 +1560,7 @@ signrule[original_List, pattern_List] :=
   		];
   		new = Join[cres, Reverse[anns] ];
   		If [ new === original,
-			Return[1];  			
+			  Return[1];
   		];
   		l1 = Length[original];
    		l2 = Length[new];
@@ -2593,6 +2577,16 @@ Zeroes out density matrix elements that include indices above the Fermi level
 zeroDensity[expr_] :=
     expr/.x_SQM/;x[[1,1]]=="\[Gamma]" &&
     MemberQ[x,y_particleIndex/;spaceWRTFermiLevel[indexSpace[y]]===+1]->0
+
+(*
+Function to convert final expression to TiledArray code
+*)
+toTiledArray[expr_] :=
+    Module[ { result}
+      result = expr;
+      Return[result];
+    ]
+
 
 (* toolkit is ready *)
 Print["SeQuant is loaded and ready...\n"];
