@@ -380,8 +380,9 @@ annIndices[a_SQS] :=
 
 
 (*
-SQM is a matrix element of an operator
-operators can be classified as antisymm, symm, and nonsymmetric, which will help in reducing expressions to their simplest form
+SQM is a matrix element of a particle-symmetric operator, i.e. it treats particles of same type are indistinguishable.
+Operators are further classified according to the permutational symmetry of equivalent indices within the bra (or, due to particle-symmetric property, within the ket)
+as antisymm, symm, and nonsymmetric. These symmetries are utilized to reduce expressions to their simplest form.
  *)
 antisymm = indexSymm[-1];
 symm = indexSymm[1];
@@ -519,13 +520,15 @@ visualizeSQE[a_deltaIndex] :=
 
 (* converts a list indices into a pair of merged index labels,
    all creators are in superscript and all annihilators in subscript *)
-makeSupSubIndexStrings[indices_,SuperscriptQ_,padLeft_]:=Module[{supInds,subInds,nSupInds,nSubInds,padding},
+makeSupSubIndexStrings[indices_,SuperscriptQ_,padLeft_Symbol,reverseSubscript_Symbol]:=Module[{supInds,subInds,nSupInds,nSubInds,padding},
   supInds = "";  nSupInds = 0;
   subInds = "";  nSubInds = 0;
   Do[
             If[ SuperscriptQ[indices[[i]]],
                 (supInds = StringJoin[supInds,visualizeIndex[indices[[i]]] ]; ++nSupInds),
-                (subInds = StringJoin[visualizeIndex[indices[[i]]],subInds ]; ++nSubInds)
+                (subInds = If[reverseSubscript, StringJoin[visualizeIndex[indices[[i]]],subInds],
+                                                 StringJoin[subInds,visualizeIndex[indices[[i]]]]
+                             ]; ++nSubInds)
             ],{i,1,Length[indices]}
   ];
   
@@ -545,7 +548,7 @@ visualizeSQE[a_SQS] :=
         
   (* superscript (creator) indices are right padded, i.e. a^+_p a_s a_r should be typeset as Subsuperscript[a, rs, \[SpaceIndicator]p] *) 
   (* subscript (annihilator) indices are right padded, i.e. a^+_p a^+_q a_s should be typeset as Subsuperscript[a, \[SpaceIndicator]s, pq] *) 
-        {supInds, subInds} = makeSupSubIndexStrings[a, indexCreQ,True];
+        {supInds, subInds} = makeSupSubIndexStrings[a, indexCreQ, True, True];
    
         Return[Subsuperscript[bodyLabel,subInds,supInds]]
     ];
@@ -562,7 +565,7 @@ visualizeSQE[a_mSQS] :=
         sqs = a[[2]];
   (* superscript (creator) indices are right padded, i.e. a^+_p a_s a_r should be typeset as Subsuperscript[a, rs, \[SpaceIndicator]p] *) 
   (* subscript (annihilator) indices are right padded, i.e. a^+_p a^+_q a_s should be typeset as Subsuperscript[a, \[SpaceIndicator]s, pq] *) 
-        {supInds, subInds} = makeSupSubIndexStrings[sqs, indexCreQ,True];
+        {supInds, subInds} = makeSupSubIndexStrings[sqs, indexCreQ, True, True];
         Return[Subsuperscript[bodyLabel,subInds,supInds]]
     ];
     
@@ -570,7 +573,7 @@ visualizeSQE[a_SQM] :=
     Module[ {bodyLabel,i,supInds,subInds},
         bodyLabel = a[[1,1]];
   (* bra and left indices are left padded *) 
-        {supInds, subInds} = makeSupSubIndexStrings[a, indexKetQ,False];
+        {supInds, subInds} = makeSupSubIndexStrings[a, indexKetQ, False, False];
         Return[Subsuperscript[bodyLabel,subInds,supInds]]
     ];
 
@@ -1727,7 +1730,11 @@ wick[expr_,extInds_List,wickOptions_List:defaultWickOptions] :=
 
         If[ spinRestricted/.wickOptions,
             result = DeleteCases[result,_particleSpin,Infinity];
+<<<<<<< HEAD
             extinds = Union[extinds,DeleteCases[extinds,_particleSpin,Infinity]];
+=======
+            extinds = Union[extinds, DeleteCases[extinds,_particleSpin,Infinity]];
+>>>>>>> 24604c3d268f0e76d65c94d28ed09ffd34cf8b89
             If[ SeQuantDebugLevel>=1,
                 Print["After eliminating spin"];
                 Print[result//TraditionalForm];
@@ -2050,11 +2057,13 @@ orderedForm[str_SQS,intInds_List:{}] :=
 
 
 orderedForm[oper_SQM,intInds_List:{}] :=
-    Module[ {result,symfac,permfac,operHead,braInds,ketInds},
+    Module[ {result,symfac,permfac,operHead,braInds,ketInds,hasParticleType,braIndsOrd,ketIndsOrd},
         symfac = Cases[oper,_indexSymm,Infinity][[1,1]];
-        If[ symfac==0,
-            Return[oper]
-        ];
+
+        (* cannot canonicalize yet operators *potentially* acting on more than 1 particle type (i.e. if any index has a particleType field) *)
+        hasParticleType = MemberQ[oper, _particleType, Infinity];
+        If[hasParticleType, Return[oper]];
+
         permfac = 1;
         operHead = Cases[oper,_OHead][[1]];
         result = oper;
@@ -2065,15 +2074,22 @@ orderedForm[oper_SQM,intInds_List:{}] :=
         *)
         result = tagIndices[oper,intInds];
         braInds = Cases[result,a_particleIndex/;a[[3]]==indexType[bra]];
+        (* canonically reorder bra indices first *)
+        braIndsOrd = Ordering[braInds];
+        braInds = braInds[[braIndsOrd]];
         If[ symfac==-1,
-            permfac*=Signature[braInds]
+            permfac *= Signature[braIndsOrd];
         ];
-        braInds = Sort[braInds];
+
         ketInds = Cases[result,a_particleIndex/;a[[3]]==indexType[ket]];
-        If[ symfac==-1,
-            permfac*=Signature[ketInds]
-        ];
-        ketInds = Sort[ketInds];
+        If[ symfac==0,
+          ketInds=ketInds[[braIndsOrd]],
+          ( ketIndsOrd = Ordering[ketInds];
+            If[ symfac==-1,
+              permfac*=Signature[ketIndsOrd]
+            ];
+            ketInds = ketInds[[ketIndsOrd]];
+          )];
         result = FlattenAt[SQM[FlattenAt[{braInds,ketInds},{{1},{2}}]],{1}];
         result = Prepend[result,operHead];
         result*=permfac;
@@ -2081,7 +2097,7 @@ orderedForm[oper_SQM,intInds_List:{}] :=
         Return[result];
     ];
 
-(* maporder function with no indecis *)
+(* maporder function with no indices *)
 maporder[a_SQS] := ( orderedForm[a,{}] ); 
 
 maporder[a_SQM] := ( orderedForm[a, {}] );
