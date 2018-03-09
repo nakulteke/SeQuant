@@ -1621,7 +1621,7 @@ signrule[original_List, pattern_List] :=
 
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (* Wick Class  *)
 
 
@@ -1762,7 +1762,10 @@ wick[expr_,extInds_List,wickOptions_List:defaultWickOptions] :=
 	it is just a**b - b**a at current stage
  *)
 commute[a_, b_] :=
-	a**b - b**a
+	a**b - b**a;
+
+acommute[a_,b_] :=
+	a**b + b**a;
 
 
 
