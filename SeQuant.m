@@ -72,6 +72,8 @@ allvirtB=Append[allvirt,particleSpin[B]];
 anyB = Append[any,particleSpin[B]];
 allanyB = Append[allany,particleSpin[B]];
 
+stringAppendSpin[str_,s_particleSpin]:=If[s===particleSpin[none],str, "\!\(\*SubscriptBox[\("<>str<>"\), \("<>If[s===particleSpin[A],"\[Alpha]","\[Beta]"]<>"\)]\)"];
+
 
 spacesEqualIgnoreParticleType[a_particleSpace,b_particleSpace] :=
     (Select[a,Head[#]=!=particleType&]==Select[b,Head[#]=!=particleType&]); 
@@ -105,18 +107,18 @@ DefaultSpaceSymbol[allvirt] = "\[Alpha]";
 DefaultSpaceSymbol[othervirt] = "\[Alpha]'";
 DefaultSpaceSymbol[any] = "p";
 DefaultSpaceSymbol[allany] = "\[Kappa]";
-DefaultSpaceSymbol[occA]="\!\(\*SubscriptBox[\(i\), \(\[Alpha]\)]\)";
-DefaultSpaceSymbol[virtA]="\!\(\*SubscriptBox[\(a\), \(\[Alpha]\)]\)";
-DefaultSpaceSymbol[allvirtA]="\!\(\*SubscriptBox[\(\[Alpha]\), \(\[Alpha]\)]\)";
-DefaultSpaceSymbol[othervirtA]="\!\(\*SubsuperscriptBox[\(\[Alpha]\), \(\[Alpha]\), \(,\)]\)";
-DefaultSpaceSymbol[anyA]="\!\(\*SubscriptBox[\(p\), \(\[Alpha]\)]\)";
-DefaultSpaceSymbol[allanyA]="\!\(\*SubscriptBox[\(\[Kappa]\), \(\[Alpha]\)]\)";
-DefaultSpaceSymbol[occB]="\!\(\*SubscriptBox[\(i\), \(\[Beta]\)]\)";
-DefaultSpaceSymbol[virtB]="\!\(\*SubscriptBox[\(a\), \(\[Beta]\)]\)";
-DefaultSpaceSymbol[allvirtB]="\!\(\*SubscriptBox[\(\[Alpha]\), \(\[Beta]\)]\)";
-DefaultSpaceSymbol[othervirtB]="\!\(\*SubsuperscriptBox[\(\[Alpha]\), \(\[Beta]\), \(,\)]\)";
-DefaultSpaceSymbol[anyB]="\!\(\*SubscriptBox[\(p\), \(\[Beta]\)]\)";
-DefaultSpaceSymbol[allanyB]="\!\(\*SubscriptBox[\(\[Kappa]\), \(\[Beta]\)]\)";
+DefaultSpaceSymbol[occA]="i";
+DefaultSpaceSymbol[virtA]="a";
+DefaultSpaceSymbol[allvirtA]="\[Gamma]";
+DefaultSpaceSymbol[othervirtA]="\[Gamma]'";
+DefaultSpaceSymbol[anyA]="p";
+DefaultSpaceSymbol[allanyA]="\[Kappa]";
+DefaultSpaceSymbol[occB]="i";
+DefaultSpaceSymbol[virtB]="a";
+DefaultSpaceSymbol[allvirtB]="\[Gamma]";
+DefaultSpaceSymbol[othervirtB]="\[Gamma]'";
+DefaultSpaceSymbol[anyB]="p";
+DefaultSpaceSymbol[allanyB]="\[Kappa]";
 
 
 (* ::Section::Closed:: *)
@@ -177,6 +179,16 @@ indexParticle[a_particleIndex] :=
         typeList = Cases[a[[2]],_particleType];
         If[ typeList=={},
             Return[particleType[default]],
+            Return[typeList[[1]]]
+        ]
+    ];
+
+(* return the particleSpin of a particleIndex *)
+indexSpin[a_particleIndex] :=
+    Module[ {typeList},
+        typeList = Cases[a[[2]],_particleSpin];
+        If[ typeList=={},
+            Return[particleSpin[none]],
             Return[typeList[[1]]]
         ]
     ];
@@ -485,7 +497,7 @@ convertExp[expr_] :=
 (* these functions display particleIndex in string *)
 
 visualizeIndex[a_particleIndex] :=
-	a[[1]];
+	stringAppendSpin[a[[1]],indexSpin[a]];
 
 Format[particleIndex[a__],TraditionalForm] :=
     visualizeIndex[particleIndex[a]];
@@ -503,7 +515,7 @@ visualizeSQE[a_+b_] :=
 visualizeSQE[a_/;(Head[a]=!=SQS&&Head[a]=!=deltaIndex&&Head[a]=!=SQM&&Head[a]=!=mSQS)] :=
     a;
 visualizeSQE[a_deltaIndex] :=
-    Subsuperscript["\[Delta]",a[[1,1]],a[[2,1]] ];
+    Subsuperscript["\[Delta]",visualizeIndex[a[[1]]],visualizeIndex[a[[2]]]];
 
 (* converts a list indices into a pair of merged index labels,
    all creators are in superscript and all annihilators in subscript *)
@@ -512,15 +524,15 @@ makeSupSubIndexStrings[indices_,SuperscriptQ_,padLeft_]:=Module[{supInds,subInds
   subInds = "";  nSubInds = 0;
   Do[
             If[ SuperscriptQ[indices[[i]]],
-                (supInds = StringJoin[supInds,indices[[i,1]] ]; ++nSupInds),
-                (subInds = StringJoin[indices[[i,1]],subInds ]; ++nSubInds)
+                (supInds = StringJoin[supInds,visualizeIndex[indices[[i]]] ]; ++nSupInds),
+                (subInds = StringJoin[visualizeIndex[indices[[i]]],subInds ]; ++nSubInds)
             ],{i,1,Length[indices]}
   ];
   
-  padding=StringPadLeft["", nSubInds-nSupInds, "\[UnderBracket]"];
-  supInds=If[nSubInds>nSupInds, If[padLeft,StringJoin[padding,supInds],StringJoin[supInds,padding]], supInds];
-  padding=StringPadLeft["", nSupInds-nSubInds, "\[UnderBracket]"];
-  subInds=If[nSubInds<nSupInds, If[padLeft,StringJoin[padding,subInds],StringJoin[subInds,padding]], subInds];
+  padding=If[nSubInds>nSupInds, StringPadLeft["", nSubInds-nSupInds, "\[UnderBracket]"], ""];
+  supInds=If[padLeft,StringJoin[padding,supInds],StringJoin[supInds,padding]];
+  padding=If[nSubInds<nSupInds, StringPadLeft["", nSupInds-nSubInds, "\[UnderBracket]"], ""];
+  subInds=If[padLeft,StringJoin[padding,subInds],StringJoin[subInds,padding]];
   
   Return[{supInds,subInds}]
 ];
@@ -1637,6 +1649,7 @@ defaultWickOptions =
 {
 	fullContract->True,
 	noCoincidences->False,
+	spinRestricted->False,
 	useDensity->True,
 	doSums->True,
 	doReindex->True
@@ -1701,7 +1714,7 @@ wick[expr_,extInds_List,wickOptions_List:defaultWickOptions] :=
         
 		(* convert cumulant to density
         	only works for cumulant of rank 1 and 2
-        	cumulant of rank higher than 2 is avoided to be caculated
+        	cumulant of rank higher than 2 is avoided to be calculated
         *)
         If[ SeQuantVacuum === SeQuantVacuumChoices["MultiConfiguration"] && useDensity/.wickOptions,
         	result = convertExp[result];
@@ -1711,9 +1724,16 @@ wick[expr_,extInds_List,wickOptions_List:defaultWickOptions] :=
             	Print[result//TraditionalForm];
         	];
         ];
+
+        If[ spinRestricted/.wickOptions,
+            result = DeleteCases[result,_particleSpin,Infinity];
+            If[ SeQuantDebugLevel>=1,
+                Print["After eliminating spin"];
+                Print[result//TraditionalForm];
+            ];
+        ];
         
-        
-        (* New internale indices may have been generatd by lowwick -- recompute *)
+        (* New internal indices may have been generatd by lowwick -- recompute *)
         intinds = Sort[indexListOut[result,extInds]];
         If[ SeQuantDebugLevel>=1,
             Print["Internal indices after wick"];
@@ -1731,7 +1751,7 @@ wick[expr_,extInds_List,wickOptions_List:defaultWickOptions] :=
             Print[result//TraditionalForm]
         ];
         
-        (* New internale indices may have been generatd by reduceWick -- recompute *)
+        (* New internal indices may have been generated by reduceWick -- recompute *)
         intinds = Sort[indexListOut[result,extInds]];
         If[ SeQuantDebugLevel>=1,
             Print["Internal indices after wick and reduce"];
