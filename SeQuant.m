@@ -1730,7 +1730,11 @@ wick[expr_,extInds_List,wickOptions_List:defaultWickOptions] :=
 
         If[ spinRestricted/.wickOptions,
             result = DeleteCases[result,_particleSpin,Infinity];
+<<<<<<< HEAD
+            extinds = Union[extinds,DeleteCases[extinds,_particleSpin,Infinity]];
+=======
             extinds = Union[extinds, DeleteCases[extinds,_particleSpin,Infinity]];
+>>>>>>> 24604c3d268f0e76d65c94d28ed09ffd34cf8b89
             If[ SeQuantDebugLevel>=1,
                 Print["After eliminating spin"];
                 Print[result//TraditionalForm];
@@ -1786,7 +1790,10 @@ wick[expr_,extInds_List,wickOptions_List:defaultWickOptions] :=
 	it is just a**b - b**a at current stage
  *)
 commute[a_, b_] :=
-	a**b - b**a
+	a**b - b**a;
+
+acommute[a_,b_] :=
+	a**b + b**a;
 
 
 
@@ -2562,7 +2569,7 @@ listMatchQ[a_List,b_List] :=
 Protect[MatchQ];
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (* canonical MO *)
 
 
