@@ -1636,7 +1636,7 @@ signrule[original_List, pattern_List] :=
 
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (* Wick Class  *)
 
 
