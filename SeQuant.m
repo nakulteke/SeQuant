@@ -1730,11 +1730,7 @@ wick[expr_,extInds_List,wickOptions_List:defaultWickOptions] :=
 
         If[ spinRestricted/.wickOptions,
             result = DeleteCases[result,_particleSpin,Infinity];
-<<<<<<< HEAD
-            extinds = Union[extinds,DeleteCases[extinds,_particleSpin,Infinity]];
-=======
             extinds = Union[extinds, DeleteCases[extinds,_particleSpin,Infinity]];
->>>>>>> 24604c3d268f0e76d65c94d28ed09ffd34cf8b89
             If[ SeQuantDebugLevel>=1,
                 Print["After eliminating spin"];
                 Print[result//TraditionalForm];
